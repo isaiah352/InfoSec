@@ -9,10 +9,10 @@
         <Authors>Isaiah Dix</Authors>
         <Company>Evil Corp</Company>
         <Description>A network scanner application</Description>
-        <Copyright>Copyright © 2026 Your Company</Copyright>
+        <Copyright>Copyright © 2026 Evil Corp</Copyright>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageProjectUrl>https://github.com/yourusername/NetworkScanner</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/yourusername/NetworkScanner</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/isaiah352/InfoSec/tree/master/NetworkScanner</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/isaiah352/InfoSec</RepositoryUrl>
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     </PropertyGroup>
 
