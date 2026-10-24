@@ -1,11 +1,14 @@
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace NetworkScanner;
 
 public class ScannerService : IDisposable
 {
-    private const int DefaultTimeout = 3000;
+    private const int DefaultTimeout = 500;
     private const int MaxPort = 65535;
     private readonly int _maxConcurrentScans;
     private bool _disposed;
@@ -126,6 +129,48 @@ public class ScannerService : IDisposable
                     semaphore.Release();
                 }
             });
+        }
+
+        await Task.WhenAll(tasks);
+    }
+
+    /// <summary>
+    /// Scan all possible IPv4 addresses (0.0.0.0 – 255.255.255.255) sequentially in batches.
+    /// For each IP, it scans the full port range using <see cref="ScanRangeAsync"/>.
+    /// The method limits the number of IPs that are scanned concurrently to avoid overwhelming the system.
+    /// </summary>
+    /// <param name="resultHandler">Callback invoked for each <see cref="ScanResult"/>.</param>
+    /// <param name="protocol">Protocol to use for the scan. Default is TCP.</param>
+    /// <param name="timeout">Timeout in milliseconds for each individual socket operation.</param>
+    /// <param name="maxConcurrentIps">Maximum number of IP addresses that are scanned in parallel.</param>
+    /// <returns></returns>
+    public async Task ScanAllIpsAsync(Action<ScanResult> resultHandler, ProtocolType protocol = ProtocolType.Tcp, int timeout = DefaultTimeout, int maxConcurrentIps = 20)
+    {
+        const int startPort = 1;
+        const int endPort = MaxPort;
+        const ulong MaxIp = 0xFFFFFFFFu;
+
+        // Semaphore to limit number of IPs scanned concurrently.
+        var ipSemaphore = new SemaphoreSlim(maxConcurrentIps);
+        var tasks = new List<Task>();
+
+        for (ulong ip = 0; ip <= MaxIp; ip++)
+        {
+            await ipSemaphore.WaitAsync();
+            var currentIp = ip; // capture
+            tasks.Add(Task.Run(async () =>
+            {
+                try
+                {
+                // Convert ulong to dotted decimal string
+                string host = $"{(currentIp >> 24) & 0xFF}.{(currentIp >> 16) & 0xFF}.{(currentIp >> 8) & 0xFF}.{currentIp & 0xFF}";
+                    await ScanRangeAsync(host, startPort, endPort, resultHandler, protocol, timeout);
+                }
+                finally
+                {
+                    ipSemaphore.Release();
+                }
+            }));
         }
 
         await Task.WhenAll(tasks);

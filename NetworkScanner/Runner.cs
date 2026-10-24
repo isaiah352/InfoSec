@@ -12,19 +12,10 @@ class Runner
         using var scanner = new ScannerService(maxConcurrentScans: 50);
 
         // Define the target IP address and port range
-        string targetIp = ""; // Replace with your target IP
-        int startPort = 1;
-        int endPort = 65535;
+        Console.WriteLine("Starting full IPv4 scan...");
 
-        Console.WriteLine($"Starting scan of {targetIp} from port {startPort} to {endPort}...");
-
-        // Scan the range and process results
-        await scanner.ScanRangeAsync(
-            targetIp,
-            startPort,
-            endPort,
-            protocol: System.Net.Sockets.ProtocolType.Tcp,
-            timeout: 2000,
+        // Scan all IPs. This will run concurrently in batches defined by the scanner's internal concurrency settings.
+        await scanner.ScanAllIpsAsync(
             resultHandler: result =>
             {
                 if (result.Success)
@@ -44,7 +35,10 @@ class Runner
                     // Uncomment this line to see closed ports in the console output
                     //Console.WriteLine($"[CLOSED] {result.Host}:{result.Port}");
                 }
-            });
+            },
+            protocol: System.Net.Sockets.ProtocolType.Tcp,
+            timeout: 2000,
+            maxConcurrentIps: 5);
 
         Console.WriteLine("Scan completed.");
     }
